@@ -78,9 +78,10 @@ def chamar_gemma(prompt: str) -> str | None:
     if not API_KEY:
         return None
     try:
-        for config in ({"temperature": 0.3, "responseMimeType": "application/json"}, {"temperature": 0.3}):
+        json_mode = {"temperature": 0.3, "responseMimeType": "application/json"}
+        for config in ({**json_mode, "thinkingConfig": {"thinkingLevel": "minimal"}}, json_mode):
             r = requests.post(f"{API_URL}/models/{MODELO}:generateContent",
-                              headers={"x-goog-api-key": API_KEY}, timeout=20,
+                              headers={"x-goog-api-key": API_KEY}, timeout=30,
                               json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": config})
             if r.status_code != 400:
                 break
@@ -136,6 +137,7 @@ if __name__ == "__main__":
     assert validar("não é json") is None
     assert validar('Claro! {"resumo": "ok", "sugestoes": [{"dica": "a", "motivo": "b"}]} Espero ajudar.') is not None
     assert validar('{"resumo": "ok", "sugestoes": [{"dica": " ", "motivo": "b"}]}') is None
+    assert validar('[{"resumo": "ok", "sugestoes": [{"dica": "a", "motivo": "b"}]}]') is not None
 
     horas = [{"hora": "15:00", "temperatura": 31, "probabilidade_chuva": 80, "chuva_mm": 6, "vento_kmh": 20,
               "rajada_kmh": 45, "descricao": "Pancadas fortes"}]
