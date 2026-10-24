@@ -34,6 +34,23 @@ def previsao_fake(coord, inicio, fim, fuso, indice):
 
 
 class RotasTest(unittest.TestCase):
+    def test_busca_reconhece_uf_e_estado_sem_acento(self):
+        self.assertEqual(rotas.preparar_busca("Campinas/SP"), ("Campinas", "SP", "São Paulo"))
+        self.assertEqual(rotas.preparar_busca("Rio Branco AC"), ("Rio Branco", "AC", "Acre"))
+        self.assertEqual(rotas.preparar_busca("Campinas, Sao Paulo"), ("campinas", "SP", "São Paulo"))
+        self.assertEqual(rotas.preparar_busca("Centro", "AM"), ("Centro", "AM", "Amazonas"))
+
+    def test_busca_filtra_estado_e_pais(self):
+        def local(estado, pais):
+            return {"properties": {"name": "Centro", "city": "Cidade", "state": estado, "countrycode": pais},
+                    "geometry": {"coordinates": [-48, -20]}}
+        rotas._buscar_locais.cache_clear()
+        with patch.object(rotas, "obter", return_value={"features": [local("Acre", "BR"), local("São Paulo", "BR"), local("São Paulo", "PT")]}):
+            r = rotas.buscar_locais("Centro", "SP")
+        self.assertEqual(len(r), 1)
+        self.assertEqual(r[0]["uf"], "SP")
+        self.assertEqual(self.client.get("/locais?q=Centro&uf=ZZ").status_code, 422)
+
     def setUp(self):
         self.client = TestClient(main.app)
         self.rota = {"distancia_km": 10, "duracao_min": 20,

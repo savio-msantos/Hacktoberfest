@@ -213,10 +213,13 @@ def inicio():
 
 
 @app.get("/locais", response_model=list[LocalRota])
-def locais(q: str = Query(min_length=3, max_length=180)):
+def locais(q: str = Query(min_length=3, max_length=180), uf: str = Query(default="", max_length=2)):
     if len(q.strip()) < 3:
         raise HTTPException(status_code=422, detail="Informe pelo menos 3 caracteres para buscar um local.")
-    return rotas.buscar_locais(q.strip())
+    uf = uf.strip().upper()
+    if uf and uf not in clima.UF.values():
+        raise HTTPException(status_code=422, detail="Selecione uma UF válida.")
+    return rotas.buscar_locais(q.strip(), uf)
 
 
 @app.post("/rotas/analise", response_model=RespostaRota)

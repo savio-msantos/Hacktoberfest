@@ -1,6 +1,8 @@
 """Planejamento climático de um corredor rodoviário (não é navegação)."""
 import math
 import os
+import re
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -26,13 +28,43 @@ def obter(url, params):
         raise clima.ErroClima("Não foi possível consultar locais ou trajetos. Tente novamente em instantes.")
 
 
+def normalizar_nome(texto):
+    return "".join(c for c in unicodedata.normalize("NFKD", texto.casefold()) if not unicodedata.combining(c)).strip()
+
+
+def preparar_busca(texto, uf=""):
+    texto = texto.strip()
+    estados = {sigla: nome for nome, sigla in clima.UF.items()}
+    # Reconhece siglas no fim ("Campinas/SP", "Campinas SP") e nomes completos.
+    for nome, sigla in sorted(clima.UF.items(), key=lambda item: -len(item[0])):
+        for sufixo in (nome, sigla):
+            padrao = r"(?:\s*[,/\-]\s*|\s+)" + re.escape(normalizar_nome(sufixo)) + r"$"
+            achado = re.search(padrao, normalizar_nome(texto))
+            if achado:
+                # Use o mesmo padrão no texto original para preservar acentos da cidade.
+                original = re.search(r"(?:\s*[,/\-]\s*|\s+)" + re.escape(sufixo) + r"$", texto, re.IGNORECASE)
+                if original:
+                    texto = texto[:original.start()].strip()
+                else:
+                    texto = normalizar_nome(texto)[:achado.start()].strip()
+                uf = uf or sigla
+                return texto, uf, estados[uf]
+    return texto, uf, estados.get(uf, "")
+
+
 @lru_cache(maxsize=256)
-def _buscar_locais(texto, cache_periodo):
-    dados = obter(f"{GEOCODER_URL}/api/", {"q": texto, "limit": 8, "bbox": "-74,-34,-28,6"})
+def _buscar_locais(texto, cache_periodo, uf=""):
+    texto, uf, estado = preparar_busca(texto, uf)
+    consulta = f"{texto}, {estado}, Brasil" if estado else f"{texto}, Brasil"
+    dados = obter(f"{GEOCODER_URL}/api/", {"q": consulta, "limit": 20, "bbox": "-74,-34,-28,6"})
     locais = []
     for f in dados.get("features", []):
         p = f.get("properties", {})
         if p.get("countrycode", "").upper() != "BR":
+            continue
+        uf_local = next((sigla for nome, sigla in clima.UF.items()
+                         if normalizar_nome(nome) == normalizar_nome(p.get("state", ""))), "")
+        if uf and uf_local != uf:
             continue
         lon, lat = f["geometry"]["coordinates"][:2]
         partes = [p.get(k) for k in ("name", "street", "housenumber", "district", "city", "state")]
@@ -40,12 +72,12 @@ def _buscar_locais(texto, cache_periodo):
         if nome:
             locais.append({"nome": nome, "latitude": lat, "longitude": lon,
                            "cidade": p.get("city") or p.get("name", ""),
-                           "uf": clima.UF.get(p.get("state", ""), "")})
+                           "uf": uf_local})
     return locais[:5]
 
 
-def buscar_locais(texto):
-    return _buscar_locais(texto, int(time() // 3600))
+def buscar_locais(texto, uf=""):
+    return _buscar_locais(texto, int(time() // 3600), uf)
 
 
 def distancia(a, b):

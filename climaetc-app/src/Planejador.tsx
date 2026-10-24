@@ -20,6 +20,35 @@ const HORAS = Array.from(
   { length: 24 },
   (_, i) => `${String(i).padStart(2, '0')}:00`
 )
+const UFS = [
+  'AC',
+  'AL',
+  'AP',
+  'AM',
+  'BA',
+  'CE',
+  'DF',
+  'ES',
+  'GO',
+  'MA',
+  'MT',
+  'MS',
+  'MG',
+  'PA',
+  'PB',
+  'PR',
+  'PE',
+  'PI',
+  'RJ',
+  'RN',
+  'RS',
+  'RO',
+  'RR',
+  'SC',
+  'SP',
+  'SE',
+  'TO',
+]
 const rotulos = {
   baixo: 'Menor atenção',
   moderado: 'Atenção moderada',
@@ -76,6 +105,7 @@ function CampoLocal({
   onChange: (v: Local | null) => void
 }) {
   const [texto, setTexto] = useState(valor?.nome || '')
+  const [uf, setUf] = useState(valor?.uf || '')
   const [opcoes, setOpcoes] = useState<Local[]>([])
   const [buscando, setBuscando] = useState(false)
   const [erro, setErro] = useState('')
@@ -86,7 +116,7 @@ function CampoLocal({
     setErro('')
     setOpcoes([])
     try {
-      const locais = await buscarLocais(texto.trim())
+      const locais = await buscarLocais(texto.trim(), uf)
       if (id !== sequencia.current) return
       setOpcoes(locais)
       if (!locais.length)
@@ -102,6 +132,28 @@ function CampoLocal({
   return (
     <div className="campo-local">
       <label htmlFor={titulo}>{titulo}</label>
+      <label className="filtro-uf" htmlFor={`${titulo}-uf`}>
+        Estado da busca
+        <select
+          id={`${titulo}-uf`}
+          value={uf}
+          onChange={(e) => {
+            sequencia.current++
+            setBuscando(false)
+            setUf(e.target.value)
+            onChange(null)
+            setOpcoes([])
+            setErro('')
+          }}
+        >
+          <option value="">Todos os estados</option>
+          {UFS.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="busca-local">
         <input
           id={titulo}
@@ -622,10 +674,13 @@ export default function Planejador({
   const [usarHistorico, setUsarHistorico] = useState(true)
   const [avisoHistorico, setAvisoHistorico] = useState('')
   const [restauracao, setRestauracao] = useState(0)
+  const [avisoRepeticao, setAvisoRepeticao] = useState('')
+  const formularioRef = useRef<HTMLFormElement>(null)
   const [resultados, setResultados] = useState<Resultado[]>([])
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const alterar = <K extends keyof Formulario>(k: K, v: Formulario[K]) => {
+    setAvisoRepeticao('')
     setForm((f) => ({ ...f, [k]: v }))
     setResultados([])
     setErro('')
@@ -639,6 +694,25 @@ export default function Planejador({
     )
   }
   function repetir(r: Registro) {
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: r.fuso,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date())
+    const parte = (tipo: Intl.DateTimeFormatPartTypes) =>
+      partes.find((p) => p.type === tipo)?.value || ''
+    const hoje = `${parte('year')}-${parte('month')}-${parte('day')}`
+    const proxima = new Date(`${hoje}T12:00:00Z`)
+    proxima.setUTCDate(proxima.getUTCDate() + 1)
+    const amanha = proxima.toISOString().slice(0, 10)
+    const data =
+      form.data > hoje ||
+      (form.data === hoje && r.inicio >= `${parte('hour')}:00`)
+        ? form.data
+        : amanha
     setForm((f) => ({
       ...f,
       origem: r.origem,
@@ -648,13 +722,27 @@ export default function Planejador({
       inicio: r.inicio,
       fim: r.fim,
       fuso: r.fuso,
+      data,
     }))
     setRestauracao((v) => v + 1)
     setResultados([])
     setErro('')
+    setAvisoRepeticao(
+      `Trajeto carregado no formulário para ${data.split('-').reverse().join('/')}, ${r.inicio}–${r.fim}. Confira os dados e clique em ${comparar ? 'Comparar períodos' : 'Analisar meu trajeto'} para obter uma nova previsão.`
+    )
+    requestAnimationFrame(() => {
+      formularioRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+      formularioRef.current
+        ?.querySelector<HTMLInputElement>('input[type="date"]')
+        ?.focus({ preventScroll: true })
+    })
   }
   async function consultar(e: FormEvent) {
     e.preventDefault()
+    setAvisoRepeticao('')
     setErro('')
     setResultados([])
     if (!form.origem || !form.destino) {
@@ -775,7 +863,16 @@ export default function Planejador({
             atividades, com orientações para sua profissão.
           </p>
         </div>
-        <form className="cartao formulario" onSubmit={(e) => void consultar(e)}>
+        <form
+          ref={formularioRef}
+          className="cartao formulario"
+          onSubmit={(e) => void consultar(e)}
+        >
+          {avisoRepeticao && (
+            <p role="status" className="aviso">
+              {avisoRepeticao}
+            </p>
+          )}
           <fieldset disabled={carregando} className="sem-borda">
             <div className="titulo-linha">
               <h2>

@@ -118,8 +118,10 @@ async function requisitar<T>(
   }
 }
 
-export const buscarLocais = (q: string) =>
-  requisitar<Local[]>(`/locais?q=${encodeURIComponent(q)}`)
+export const buscarLocais = (q: string, uf = '') =>
+  requisitar<Local[]>(
+    `/locais?q=${encodeURIComponent(q)}&uf=${encodeURIComponent(uf)}`
+  )
 export const analisarRota = (pedido: Pedido) =>
   requisitar<Resultado>('/rotas/analise', {
     method: 'POST',

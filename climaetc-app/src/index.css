@@ -691,3 +691,20 @@ hr {
   white-space: nowrap;
   border: 0;
 }
+.filtro-uf {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: #6c7f75;
+}
+.filtro-uf select {
+  width: auto;
+  max-width: 200px;
+  min-height: 36px;
+  padding: 6px 10px;
+}
+.formulario {
+  scroll-margin-top: 16px;
+}
