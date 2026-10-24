@@ -1,107 +1,107 @@
-import { useRef, useState } from "react";
-import type { FormEvent } from "react";
-import { Icon } from "../../components/Icon";
-import type { Plan, Shift } from "../../types/climate";
-import { displayDate, localDate, nextDate } from "../../utils/date";
-import { ShiftFields } from "./ShiftFields";
-import { useConsultation } from "./useConsultation";
-import { Results } from "./Results";
+import { useRef, useState } from 'react'
+import type { FormEvent } from 'react'
+import { Icon } from '../../components/Icon'
+import type { Plan, Shift } from '../../types/climate'
+import { displayDate, localDate, nextDate } from '../../utils/date'
+import { ShiftFields } from './ShiftFields'
+import { useConsultation } from './useConsultation'
+import { Results } from './Results'
 
 export function Planner() {
   const [plan, setPlan] = useState<Plan>({
-    cidade: "Rio Branco",
-    profissao: "entregador",
-    inicio: "13:00",
-    fim: "18:00",
+    cidade: 'Rio Branco',
+    profissao: 'entregador',
+    inicio: '13:00',
+    fim: '18:00',
     data: localDate(),
-  });
-  const [compare, setCompare] = useState(false);
+  })
+  const [compare, setCompare] = useState(false)
   const [alternative, setAlternative] = useState<Shift>({
-    inicio: "08:00",
-    fim: "13:00",
-  });
-  const [validation, setValidation] = useState("");
+    inicio: '08:00',
+    fim: '13:00',
+  })
+  const [validation, setValidation] = useState('')
   const [locationMessage, setLocationMessage] = useState(
-    "Você também pode escolher a cidade, sem usar GPS.",
-  );
-  const [locating, setLocating] = useState(false);
-  const locationRequest = useRef(0);
-  const query = useConsultation();
-  const isForm = query.stage === "form";
-  const failed = query.stage === "error";
-  const complete = query.stage === "complete";
-  const plans = () => (compare ? [plan, { ...plan, ...alternative }] : [plan]);
+    'Você também pode escolher a cidade, sem usar GPS.'
+  )
+  const [locating, setLocating] = useState(false)
+  const locationRequest = useRef(0)
+  const query = useConsultation()
+  const isForm = query.stage === 'form'
+  const failed = query.stage === 'error'
+  const complete = query.stage === 'complete'
+  const plans = () => (compare ? [plan, { ...plan, ...alternative }] : [plan])
   function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault()
     if (!plan.cidade.trim()) {
-      setValidation("Informe a cidade onde você vai trabalhar.");
-      return;
+      setValidation('Informe a cidade onde você vai trabalhar.')
+      return
     }
     if (
       plan.inicio === plan.fim ||
       (compare && alternative.inicio === alternative.fim)
     ) {
-      setValidation("O começo e o fim de cada turno precisam ser diferentes.");
-      return;
+      setValidation('O começo e o fim de cada turno precisam ser diferentes.')
+      return
     }
     if (
       compare &&
       plan.inicio === alternative.inicio &&
       plan.fim === alternative.fim
     ) {
-      setValidation("Escolha horários diferentes para comparar os turnos.");
-      return;
+      setValidation('Escolha horários diferentes para comparar os turnos.')
+      return
     }
-    locationRequest.current++;
-    setLocating(false);
-    setValidation("");
-    void query.run(plans().map((p) => ({ ...p, cidade: p.cidade.trim() })));
+    locationRequest.current++
+    setLocating(false)
+    setValidation('')
+    void query.run(plans().map((p) => ({ ...p, cidade: p.cidade.trim() })))
   }
   function locate() {
     if (!navigator.geolocation) {
-      setLocationMessage("Localização indisponível. Digite sua cidade.");
-      return;
+      setLocationMessage('Localização indisponível. Digite sua cidade.')
+      return
     }
-    setLocating(true);
-    setLocationMessage("Buscando sua cidade…");
-    const requestId = ++locationRequest.current;
+    setLocating(true)
+    setLocationMessage('Buscando sua cidade…')
+    const requestId = ++locationRequest.current
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}&accept-language=pt-BR`,
-            { signal: AbortSignal.timeout(10000) },
-          );
-          if (!response.ok) throw new Error();
-          const data = await response.json();
+            { signal: AbortSignal.timeout(10000) }
+          )
+          if (!response.ok) throw new Error()
+          const data = await response.json()
           const city =
             data.address?.city ||
             data.address?.town ||
             data.address?.municipality ||
-            data.address?.village;
-          if (!city) throw new Error();
-          if (requestId !== locationRequest.current) return;
-          setPlan((previous) => ({ ...previous, cidade: city }));
-          setLocationMessage("Cidade encontrada. Confira antes de consultar.");
+            data.address?.village
+          if (!city) throw new Error()
+          if (requestId !== locationRequest.current) return
+          setPlan((previous) => ({ ...previous, cidade: city }))
+          setLocationMessage('Cidade encontrada. Confira antes de consultar.')
         } catch {
           if (requestId === locationRequest.current)
             setLocationMessage(
-              "Não foi possível identificar a cidade. Digite-a no campo acima.",
-            );
+              'Não foi possível identificar a cidade. Digite-a no campo acima.'
+            )
         } finally {
-          if (requestId === locationRequest.current) setLocating(false);
+          if (requestId === locationRequest.current) setLocating(false)
         }
       },
       () => {
         if (requestId === locationRequest.current) {
-          setLocating(false);
+          setLocating(false)
           setLocationMessage(
-            "Localização não autorizada ou indisponível. Digite sua cidade.",
-          );
+            'Localização não autorizada ou indisponível. Digite sua cidade.'
+          )
         }
       },
-      { timeout: 10000, maximumAge: 300000 },
-    );
+      { timeout: 10000, maximumAge: 300000 }
+    )
   }
   return (
     <div className="app-shell">
@@ -176,9 +176,9 @@ export function Planner() {
                     maxLength={120}
                     value={plan.cidade}
                     onChange={(e) => {
-                      locationRequest.current++;
-                      setLocating(false);
-                      setPlan({ ...plan, cidade: e.target.value });
+                      locationRequest.current++
+                      setLocating(false)
+                      setPlan({ ...plan, cidade: e.target.value })
                     }}
                     placeholder="Digite sua cidade"
                   />
@@ -192,16 +192,16 @@ export function Planner() {
                 disabled={locating}
               >
                 <Icon name="locate" />
-                {locating ? "Buscando localização…" : "Usar minha localização"}
+                {locating ? 'Buscando localização…' : 'Usar minha localização'}
               </button>
               <small role="status">{locationMessage}</small>
             </div>
             <fieldset>
               <legend>Como você trabalha?</legend>
               <div className="profession-options">
-                {(["entregador", "mototaxista"] as const).map((value) => (
+                {(['entregador', 'mototaxista'] as const).map((value) => (
                   <label
-                    className={`profession ${plan.profissao === value ? "selected" : ""}`}
+                    className={`profession ${plan.profissao === value ? 'selected' : ''}`}
                     key={value}
                   >
                     <input
@@ -212,13 +212,13 @@ export function Planner() {
                       onChange={() => setPlan({ ...plan, profissao: value })}
                     />
                     <Icon
-                      name={value === "entregador" ? "package" : "helmet"}
+                      name={value === 'entregador' ? 'package' : 'helmet'}
                     />
                     <span>
-                      {value === "entregador" ? "Entregador" : "Mototaxista"}
+                      {value === 'entregador' ? 'Entregador' : 'Mototaxista'}
                     </span>
                     <Icon
-                      name={plan.profissao === value ? "checked" : "circle"}
+                      name={plan.profissao === value ? 'checked' : 'circle'}
                     />
                   </label>
                 ))}
@@ -314,8 +314,8 @@ export function Planner() {
             <div className="form-actions">
               <button className="primary" type="submit">
                 {compare
-                  ? "Analisar e comparar turnos"
-                  : "Ver previsão do meu turno"}
+                  ? 'Analisar e comparar turnos'
+                  : 'Ver previsão do meu turno'}
                 <Icon name="arrow" />
               </button>
               {!compare && (
@@ -336,24 +336,24 @@ export function Planner() {
           <section className="page-heading">
             <span className="eyebrow">
               {failed
-                ? "CONSULTA INDISPONÍVEL"
+                ? 'CONSULTA INDISPONÍVEL'
                 : complete
-                  ? "SEU PLANO ESTÁ PRONTO"
-                  : "PREPARANDO SEU TURNO"}
+                  ? 'SEU PLANO ESTÁ PRONTO'
+                  : 'PREPARANDO SEU TURNO'}
             </span>
             <h1 tabIndex={-1}>
               {failed
-                ? "Seu turno está salvo. Vamos tentar de novo?"
+                ? 'Seu turno está salvo. Vamos tentar de novo?'
                 : complete
                   ? compare
-                    ? "Compare seus horários de trabalho."
-                    : "Tudo pronto para o seu turno."
-                  : "Um momento para planejar melhor."}
+                    ? 'Compare seus horários de trabalho.'
+                    : 'Tudo pronto para o seu turno.'
+                  : 'Um momento para planejar melhor.'}
             </h1>
             <p>
               {failed
-                ? "Você não precisa preencher seus dados novamente."
-                : "Da previsão às orientações: acompanhe cada etapa da sua consulta."}
+                ? 'Você não precisa preencher seus dados novamente.'
+                : 'Da previsão às orientações: acompanhe cada etapa da sua consulta.'}
             </p>
           </section>
           {complete ? (
@@ -381,9 +381,9 @@ export function Planner() {
                   <div>
                     <dt>Profissão</dt>
                     <dd>
-                      {plan.profissao === "entregador"
-                        ? "Entregador"
-                        : "Mototaxista"}
+                      {plan.profissao === 'entregador'
+                        ? 'Entregador'
+                        : 'Mototaxista'}
                     </dd>
                   </div>
                   <div>
@@ -391,10 +391,10 @@ export function Planner() {
                     <dd>{displayDate(plan.data)}</dd>
                   </div>
                   <div>
-                    <dt>{compare ? "Turno A" : "Horário"}</dt>
+                    <dt>{compare ? 'Turno A' : 'Horário'}</dt>
                     <dd>
                       {plan.inicio} às {plan.fim}
-                      {plan.fim < plan.inicio ? " (+1 dia)" : ""}
+                      {plan.fim < plan.inicio ? ' (+1 dia)' : ''}
                     </dd>
                   </div>
                   {compare && (
@@ -403,8 +403,8 @@ export function Planner() {
                       <dd>
                         {alternative.inicio} às {alternative.fim}
                         {alternative.fim < alternative.inicio
-                          ? " (+1 dia)"
-                          : ""}
+                          ? ' (+1 dia)'
+                          : ''}
                       </dd>
                     </div>
                   )}
@@ -413,8 +413,8 @@ export function Planner() {
                   <Icon name="saved" />
                   <small>
                     {failed
-                      ? "Seu local e turno continuam salvos nesta tela."
-                      : "Local e horário definidos para sua consulta."}
+                      ? 'Seu local e turno continuam salvos nesta tela.'
+                      : 'Local e horário definidos para sua consulta.'}
                   </small>
                 </div>
               </aside>
@@ -433,8 +433,8 @@ export function Planner() {
                         <div>
                           <h2>
                             {query.weatherReady
-                              ? "Não conseguimos concluir a análise."
-                              : "Não conseguimos trazer a previsão."}
+                              ? 'Não conseguimos concluir a análise.'
+                              : 'Não conseguimos trazer a previsão.'}
                           </h2>
                           <p role="alert">{query.error}</p>
                         </div>
@@ -442,18 +442,18 @@ export function Planner() {
                       <hr />
                       <div className="progress-step">
                         <Icon
-                          name={query.weatherReady ? "check" : "unavailable"}
+                          name={query.weatherReady ? 'check' : 'unavailable'}
                         />
                         <div>
                           <h3>
                             {query.weatherReady
-                              ? "Previsão recebida"
-                              : "Dados do clima indisponíveis"}
+                              ? 'Previsão recebida'
+                              : 'Dados do clima indisponíveis'}
                           </h3>
                           <p>
                             {query.weatherReady
-                              ? "A consulta meteorológica foi concluída."
-                              : "Não foi possível obter a previsão do turno."}
+                              ? 'A consulta meteorológica foi concluída.'
+                              : 'Não foi possível obter a previsão do turno.'}
                           </p>
                         </div>
                       </div>
@@ -462,13 +462,13 @@ export function Planner() {
                         <div>
                           <h3>
                             {query.weatherReady
-                              ? "Análise interrompida"
-                              : "Análise do Gemma não iniciada"}
+                              ? 'Análise interrompida'
+                              : 'Análise do Gemma não iniciada'}
                           </h3>
                           <p>
                             {query.weatherReady
-                              ? "Tente novamente para gerar as orientações."
-                              : "Sem dados meteorológicos, a IA não gera orientações para este turno."}
+                              ? 'Tente novamente para gerar as orientações.'
+                              : 'Sem dados meteorológicos, a IA não gera orientações para este turno.'}
                           </p>
                         </div>
                       </div>
@@ -497,20 +497,20 @@ export function Planner() {
                       <div className="shift-heading">
                         <h2>Da previsão ao seu plano</h2>
                         <small>
-                          Etapa {query.weatherReady ? "2" : "1"} de 2
+                          Etapa {query.weatherReady ? '2' : '1'} de 2
                         </small>
                       </div>
                       <div className="progress-step">
                         <Icon
-                          name={query.weatherReady ? "check" : "spinner"}
-                          className={query.weatherReady ? "" : "spinning"}
+                          name={query.weatherReady ? 'check' : 'spinner'}
+                          className={query.weatherReady ? '' : 'spinning'}
                         />
                         <div>
                           <div className="step-heading">
                             <h3>
                               {query.weatherReady
-                                ? "Previsão organizada"
-                                : "Consultando a previsão"}
+                                ? 'Previsão organizada'
+                                : 'Consultando a previsão'}
                             </h3>
                             {query.weatherReady && (
                               <span className="eyebrow">DADOS RECEBIDOS</span>
@@ -524,26 +524,26 @@ export function Planner() {
                       </div>
                       <hr />
                       <div
-                        className={`progress-step ${!query.weatherReady ? "pending" : ""}`}
+                        className={`progress-step ${!query.weatherReady ? 'pending' : ''}`}
                       >
                         <Icon
-                          name={query.weatherReady ? "spinner" : "circle"}
-                          className={query.weatherReady ? "spinning" : ""}
+                          name={query.weatherReady ? 'spinner' : 'circle'}
+                          className={query.weatherReady ? 'spinning' : ''}
                         />
                         <div>
                           <div className="step-heading">
                             <h3>
                               {query.weatherReady
-                                ? "Gemma analisa seu turno"
-                                : "Aguardando os dados do clima"}
+                                ? 'Gemma analisa seu turno'
+                                : 'Aguardando os dados do clima'}
                             </h3>
                             {query.weatherReady && <Icon name="dots" />}
                           </div>
                           <p>
-                            Cruzando o clima com a rotina de{" "}
-                            {plan.profissao === "entregador"
-                              ? "entregas"
-                              : "transporte de passageiros"}{" "}
+                            Cruzando o clima com a rotina de{' '}
+                            {plan.profissao === 'entregador'
+                              ? 'entregas'
+                              : 'transporte de passageiros'}{' '}
                             para explicar cada cuidado.
                           </p>
                         </div>
@@ -584,5 +584,5 @@ export function Planner() {
         </div>
       </footer>
     </div>
-  );
+  )
 }

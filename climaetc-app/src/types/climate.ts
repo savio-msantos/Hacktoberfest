@@ -1,43 +1,43 @@
-export type Profession = "entregador" | "mototaxista";
+export type Profession = 'entregador' | 'mototaxista'
 export interface Shift {
-  inicio: string;
-  fim: string;
+  inicio: string
+  fim: string
 }
 export interface Plan extends Shift {
-  cidade: string;
-  profissao: Profession;
-  data: string;
+  cidade: string
+  profissao: Profession
+  data: string
 }
 export interface ForecastHour {
-  hora: string;
-  temperatura: number;
-  probabilidade_chuva: number;
-  vento_kmh: number;
-  chuva_mm: number;
-  descricao: string;
+  hora: string
+  temperatura: number
+  probabilidade_chuva: number
+  vento_kmh: number
+  chuva_mm: number
+  descricao: string
 }
 export interface Forecast {
-  cidade: string;
-  data: string;
-  fonte: string;
-  previsao: ForecastHour[];
+  cidade: string
+  data: string
+  fonte: string
+  previsao: ForecastHour[]
 }
 export interface Analysis {
-  resumo: string;
+  resumo: string
   horarios_atencao: {
-    inicio: string;
-    fim: string;
-    nivel: string;
-    chance_max: number;
-    chuva_mm: number;
-    descricao: string;
-  }[];
-  sugestoes: { dica: string; motivo: string }[];
-  gerado_por: "gemma" | "template";
+    inicio: string
+    fim: string
+    nivel: string
+    chance_max: number
+    chuva_mm: number
+    descricao: string
+  }[]
+  sugestoes: { dica: string; motivo: string }[]
+  gerado_por: 'gemma' | 'template'
 }
 export interface ShiftResult {
-  plan: Plan;
-  forecast: Forecast;
-  analysis: Analysis;
+  plan: Plan
+  forecast: Forecast
+  analysis: Analysis
 }
-export type Stage = "form" | "weather" | "analysis" | "error" | "complete";
+export type Stage = 'form' | 'weather' | 'analysis' | 'error' | 'complete'
