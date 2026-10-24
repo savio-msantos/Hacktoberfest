@@ -1,33 +1,47 @@
 {
   "POST /previsao": {
-    "pedido": {"cidade": "Rio Branco", "inicio": "13:00", "fim": "18:00"},
+    "pedido": {"cidade": "Rio Branco", "inicio": "13:00", "fim": "18:00", "data": "2026-10-25"},
     "resposta": {
       "cidade": "Rio Branco, Acre",
       "data": "2026-10-25",
       "fonte": "Open-Meteo",
       "previsao": [
-        {"hora": "13:00", "temperatura": 32, "probabilidade_chuva": 20, "vento_kmh": 9, "chuva_mm": 0.0, "descricao": "Parcialmente nublado"},
-        {"hora": "14:00", "temperatura": 32, "probabilidade_chuva": 35, "vento_kmh": 11, "chuva_mm": 0.2, "descricao": "Nublado"},
-        {"hora": "15:00", "temperatura": 30, "probabilidade_chuva": 75, "vento_kmh": 18, "chuva_mm": 4.8, "descricao": "Pancadas de chuva"},
-        {"hora": "16:00", "temperatura": 27, "probabilidade_chuva": 80, "vento_kmh": 22, "chuva_mm": 6.1, "descricao": "Pancadas fortes"},
-        {"hora": "17:00", "temperatura": 26, "probabilidade_chuva": 45, "vento_kmh": 12, "chuva_mm": 1.2, "descricao": "Chuva fraca"}
+        {"hora": "13:00", "temperatura": 32, "probabilidade_chuva": 20, "vento_kmh": 9, "rajada_kmh": 18, "chuva_mm": 0.0, "descricao": "Parcialmente nublado"},
+        {"hora": "14:00", "temperatura": 32, "probabilidade_chuva": 35, "vento_kmh": 11, "rajada_kmh": 22, "chuva_mm": 0.2, "descricao": "Nublado"},
+        {"hora": "15:00", "temperatura": 30, "probabilidade_chuva": 75, "vento_kmh": 18, "rajada_kmh": 41, "chuva_mm": 4.8, "descricao": "Pancadas de chuva"},
+        {"hora": "16:00", "temperatura": 27, "probabilidade_chuva": 80, "vento_kmh": 22, "rajada_kmh": 55, "chuva_mm": 6.1, "descricao": "Pancadas fortes"},
+        {"hora": "17:00", "temperatura": 26, "probabilidade_chuva": 45, "vento_kmh": 12, "rajada_kmh": 25, "chuva_mm": 1.2, "descricao": "Chuva fraca"}
+      ],
+      "alertas": [
+        {"fonte": "INMET", "evento": "Tempestade", "severidade": "Perigo Potencial",
+         "inicio": "2026-10-25 00:00", "fim": "2026-10-25 23:59",
+         "riscos": ["Chuva entre 20 e 30 mm/h ou até 50 mm/dia, ventos intensos (40-60 km/h)."],
+         "instrucoes": ["Em caso de rajadas de vento, não se abrigue debaixo de árvores."]}
       ]
-    }
+    },
+    "observacao": "todos os horários (previsão, turno e alertas) estão no horário de Brasília"
   },
   "POST /analise": {
-    "pedido": {"cidade": "Rio Branco, Acre", "profissao": "entregador", "inicio": "13:00", "fim": "18:00",
-               "previsao": "<a lista 'previsao' que veio do /previsao>"},
+    "pedido": {"cidade": "Rio Branco", "profissao": "entregador", "inicio": "13:00", "fim": "18:00", "data": "2026-10-25"},
     "resposta": {
-      "resumo": "Tarde quente até 14h, depois chuva forte das 15h às 18h, com pico às 16h.",
+      "resumo": "Tarde quente até 14h, depois chuva forte das 15h às 18h, com alerta de tempestade do INMET.",
       "horarios_atencao": [
-        {"inicio": "15:00", "fim": "18:00", "nivel": "alto", "chance_max": 80, "chuva_mm": 12.1, "descricao": "Pancadas de chuva"}
+        {"inicio": "15:00", "fim": "18:00", "nivel": "alto", "chance_max": 80, "chuva_mm": 12.1, "descricao": "Pancadas fortes"}
       ],
       "sugestoes": [
         {"dica": "Adiante as entregas mais longas para antes das 15h.", "motivo": "A chance de chuva sobe de 35% para 75% às 15h."},
         {"dica": "Guarde o celular em saco plástico e cubra a mochila.", "motivo": "Previsão de 6,1 mm às 16h, chuva forte."},
-        {"dica": "Reduza a velocidade e evite ruas que costumam alagar.", "motivo": "Mais de 12 mm acumulados até as 18h deixam a pista escorregadia."}
+        {"dica": "Não pare debaixo de árvores durante a chuva.", "motivo": "Rajadas de até 55 km/h às 16h e alerta de tempestade do INMET."}
       ],
       "gerado_por": "gemma"
-    }
+    },
+    "observacao": "profissao é texto livre (ex: entregador, mototaxista, feirante, pedreiro); o /analise busca o clima sozinho; o front pode chamar /previsao e /analise ao mesmo tempo com o mesmo corpo (+ profissao)"
+  },
+  "erros": {
+    "formato": {"detail": "mensagem em português, pronta para mostrar na tela"},
+    "422": "dados inválidos no formulário (ex: \"inicio: use hora cheia no formato HH:00, ex: 13:00\")",
+    "404": "cidade não encontrada ou sem previsão para o dia/horário",
+    "502": "serviço de clima (Open-Meteo) fora do ar ou com erro",
+    "500": "erro interno inesperado"
   }
 }
