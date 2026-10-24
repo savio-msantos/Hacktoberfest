@@ -1,0 +1,33 @@
+{
+  "POST /previsao": {
+    "pedido": {"cidade": "Rio Branco", "inicio": "13:00", "fim": "18:00"},
+    "resposta": {
+      "cidade": "Rio Branco, Acre",
+      "data": "2026-10-25",
+      "fonte": "Open-Meteo",
+      "previsao": [
+        {"hora": "13:00", "temperatura": 32, "probabilidade_chuva": 20, "vento_kmh": 9, "chuva_mm": 0.0, "descricao": "Parcialmente nublado"},
+        {"hora": "14:00", "temperatura": 32, "probabilidade_chuva": 35, "vento_kmh": 11, "chuva_mm": 0.2, "descricao": "Nublado"},
+        {"hora": "15:00", "temperatura": 30, "probabilidade_chuva": 75, "vento_kmh": 18, "chuva_mm": 4.8, "descricao": "Pancadas de chuva"},
+        {"hora": "16:00", "temperatura": 27, "probabilidade_chuva": 80, "vento_kmh": 22, "chuva_mm": 6.1, "descricao": "Pancadas fortes"},
+        {"hora": "17:00", "temperatura": 26, "probabilidade_chuva": 45, "vento_kmh": 12, "chuva_mm": 1.2, "descricao": "Chuva fraca"}
+      ]
+    }
+  },
+  "POST /analise": {
+    "pedido": {"cidade": "Rio Branco, Acre", "profissao": "entregador", "inicio": "13:00", "fim": "18:00",
+               "previsao": "<a lista 'previsao' que veio do /previsao>"},
+    "resposta": {
+      "resumo": "Tarde quente até 14h, depois chuva forte das 15h às 18h, com pico às 16h.",
+      "horarios_atencao": [
+        {"inicio": "15:00", "fim": "18:00", "nivel": "alto", "chance_max": 80, "chuva_mm": 12.1, "descricao": "Pancadas de chuva"}
+      ],
+      "sugestoes": [
+        {"dica": "Adiante as entregas mais longas para antes das 15h.", "motivo": "A chance de chuva sobe de 35% para 75% às 15h."},
+        {"dica": "Guarde o celular em saco plástico e cubra a mochila.", "motivo": "Previsão de 6,1 mm às 16h, chuva forte."},
+        {"dica": "Reduza a velocidade e evite ruas que costumam alagar.", "motivo": "Mais de 12 mm acumulados até as 18h deixam a pista escorregadia."}
+      ],
+      "gerado_por": "gemma"
+    }
+  }
+}
