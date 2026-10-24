@@ -1,4 +1,4 @@
-import { Icone } from '../utils/constants.tsx'
+import { Icone } from './Icone'
 
 export default function AvisoOficial() {
   return (

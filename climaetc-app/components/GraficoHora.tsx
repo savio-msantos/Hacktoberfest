@@ -1,4 +1,5 @@
-import { Icone, HORAS } from '../utils/constants.tsx'
+import { Icone } from './Icone'
+import { HORAS } from '../utils/constants.tsx'
 
 export default function GraficoHora() {
   const ALTURA = 170

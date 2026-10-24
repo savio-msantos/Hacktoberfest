@@ -1,5 +1,6 @@
+import { Icone } from './Icone'
 import React from 'react'
-import { calcularDuracaoHoras, Icone } from '../utils/constants.tsx'
+import { calcularDuracaoHoras } from '../utils/constants.tsx'
 import type { EstadoTurnos } from '../types'
 import { Selecao } from './Selecao.tsx'
 import { Badge } from './Badge.tsx'

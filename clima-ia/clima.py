@@ -1,6 +1,8 @@
 from datetime import date, datetime, timedelta, timezone
 
 import requests
+from functools import lru_cache
+from time import time
 
 TZ = "America/Sao_Paulo"
 FUSO = timezone(timedelta(hours=-3))
@@ -88,13 +90,13 @@ def normalizar(dados: dict) -> list[dict]:
                 "data_hora": h["time"][i],
                 "hora": h["time"][i][11:16],
                 "temperatura": round(h["temperature_2m"][i]),
-                "probabilidade_chuva": h["precipitation_probability"][i + 1] or 0,
-                "chuva_mm": h["precipitation"][i + 1] or 0,
+                "probabilidade_chuva": h["precipitation_probability"][i] or 0,
+                "chuva_mm": h["precipitation"][i] or 0,
                 "vento_kmh": round(h["wind_speed_10m"][i] or 0),
-                "rajada_kmh": round(h["wind_gusts_10m"][i + 1] or 0),
-                "descricao": DESCRICAO.get(h["weather_code"][i + 1], "Indefinido"),
+                "rajada_kmh": round(h["wind_gusts_10m"][i] or 0),
+                "descricao": DESCRICAO.get(h["weather_code"][i], "Indefinido"),
             }
-            for i in range(len(h["time"]) - 1)
+            for i in range(len(h["time"]))
             if h["temperature_2m"][i] is not None
         ]
     except (KeyError, TypeError, IndexError):
@@ -128,16 +130,27 @@ def previsao_turno(cidade: str, dia: date, inicio: int, fim: int) -> tuple[str, 
     return local, uf, horas, alertas
 
 
-def alertas_inmet(cidade: str, uf: str, comeco: datetime, final: datetime) -> list[dict]:
-    if not uf:
-        return []
+@lru_cache(maxsize=2)
+def _avisos_inmet(periodo):
     try:
         r = requests.get("https://apiprevmet3.inmet.gov.br/avisos/ativos", timeout=TIMEOUT,
                          headers={"User-Agent": "Mozilla/5.0"})
         r.raise_for_status()
-        avisos = r.json().get("hoje", []) + r.json().get("futuro", [])
+        dados = r.json()
+        return dados.get("hoje", []) + dados.get("futuro", [])
     except (requests.RequestException, ValueError, AttributeError, TypeError) as e:
         print(f"[inmet] falhou: {e!r}")
+        raise ErroClima("Consulta de alertas INMET indisponível.")
+
+
+def alertas_inmet(cidade: str, uf: str, comeco: datetime, final: datetime, estrito=False) -> list[dict]:
+    if not uf:
+        return []
+    try:
+        avisos = _avisos_inmet(int(time() // 300))
+    except ErroClima:
+        if estrito:
+            raise
         return []
 
     alvo = f"{cidade} - {uf} ("
@@ -147,6 +160,12 @@ def alertas_inmet(cidade: str, uf: str, comeco: datetime, final: datetime) -> li
             if alvo not in (a.get("municipios") or "") or a.get("encerrado"):
                 continue
             ini, fim = datetime.fromisoformat(a["inicio"]), datetime.fromisoformat(a["fim"])
+            # A API pode incluir deslocamento UTC. O fluxo antigo usa Brasília;
+            # o planejador converte seu intervalo para Brasília antes da chamada.
+            if ini.tzinfo:
+                ini = ini.astimezone(FUSO).replace(tzinfo=None)
+            if fim.tzinfo:
+                fim = fim.astimezone(FUSO).replace(tzinfo=None)
         except (KeyError, TypeError, ValueError):
             continue
         chave = (a.get("descricao"), a.get("severidade"), ini, fim)
@@ -213,5 +232,5 @@ if __name__ == "__main__":
                     "precipitation_probability": [20, 80], "precipitation": [0, 6.1],
                     "wind_speed_10m": [9, 22], "wind_gusts_10m": [15, 55], "weather_code": [2, 82]}}
     assert [(x["hora"], x["probabilidade_chuva"], x["rajada_kmh"], x["descricao"]) for x in normalizar(d)] == \
-        [("15:00", 80, 55, "Pancadas fortes")]
+        [("15:00", 20, 15, "Parcialmente nublado"), ("16:00", 80, 55, "Pancadas fortes")]
     print("clima OK")

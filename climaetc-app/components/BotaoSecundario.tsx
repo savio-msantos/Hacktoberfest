@@ -1,5 +1,5 @@
+import { Icone } from './Icone'
 import type { ReactNode } from 'react'
-import { Icone } from '../utils/constants.tsx'
 
 interface BotaoSecundarioProps {
   children: ReactNode

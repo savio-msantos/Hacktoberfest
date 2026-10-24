@@ -1,4 +1,5 @@
-import { HORARIOS, Icone } from '../utils/constants'
+import { Icone } from './Icone'
+import { HORARIOS } from '../utils/constants'
 
 interface SelecaoProps {
   rotulo: string

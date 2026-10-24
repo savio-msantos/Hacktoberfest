@@ -1,4 +1,5 @@
-import { Icone, PLANO } from '../utils/constants.tsx'
+import { Icone } from './Icone'
+import { PLANO } from '../utils/constants.tsx'
 
 export default function PlanoIA() {
   return (

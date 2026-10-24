@@ -1,14 +1,16 @@
 import json
 import os
 from datetime import date
+from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).with_name(".env"))
 
 API_URL = os.getenv("GEMMA_API_URL") or "https://generativelanguage.googleapis.com/v1beta"
-API_KEY = os.getenv("GEMMA_API_KEY", "")
+API_KEY = next(((os.getenv(nome) or "").strip() for nome in
+                ("GEMMA_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY") if (os.getenv(nome) or "").strip()), "")
 MODELO = os.getenv("GEMMA_MODEL") or "gemma-4-26b-a4b-it"
 
 CUIDADOS = {

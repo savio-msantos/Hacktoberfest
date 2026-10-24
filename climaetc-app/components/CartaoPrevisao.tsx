@@ -1,4 +1,5 @@
-import { Icone } from '../utils/constants.tsx'
+import { Icone } from './Icone'
+
 import { CloudRain } from 'lucide-react'
 
 export default function CartaoPrevisao() {

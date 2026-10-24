@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,6 +9,7 @@ from pydantic import AfterValidator, BaseModel, Field, StringConstraints, model_
 
 import clima
 import ia
+import rotas
 
 app = FastAPI(title="Assistente Climático com Gemma")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -101,6 +102,72 @@ class RespostaAnalise(BaseModel):
     gerado_por: Literal["gemma", "template"]
 
 
+class LocalRota(BaseModel):
+    nome: str = Field(min_length=1, max_length=500)
+    latitude: float = Field(ge=-34, le=6, allow_inf_nan=False)
+    longitude: float = Field(ge=-74, le=-28, allow_inf_nan=False)
+    cidade: str = Field(default="", max_length=150)
+    uf: str = Field(default="", max_length=2)
+
+
+class RegistroRotina(BaseModel):
+    data: date
+    inicio: Horario
+    fim: Horario
+    fuso: str = Field(max_length=60)
+    origem: str = Field(min_length=1, max_length=500)
+    destino: str = Field(min_length=1, max_length=500)
+    profissao: Profissao
+    transporte: Literal["moto", "carro"]
+    retorno: Literal["nao_informado", "tranquilo", "chuva_atrapalhou", "mudei_horario"] = "nao_informado"
+
+
+class PedidoRota(Turno):
+    origem: LocalRota
+    destino: LocalRota
+    profissao: Profissao
+    transporte: Literal["moto", "carro"] = "moto"
+    data: date | None = None
+    fuso: Literal["America/Rio_Branco", "America/Manaus", "America/Sao_Paulo", "America/Noronha"] = "America/Rio_Branco"
+    historico: list[RegistroRotina] = Field(default_factory=list, max_length=5)
+
+    @model_validator(mode="after")
+    def locais_distintos(self):
+        if rotas.distancia((self.origem.longitude, self.origem.latitude),
+                           (self.destino.longitude, self.destino.latitude)) < 0.05:
+            raise ValueError("escolha origem e destino diferentes, a pelo menos 50 metros")
+        return self
+
+
+class PontoRota(BaseModel):
+    nome: str
+    latitude: float
+    longitude: float
+    previsao: list[PrevisaoHora]
+    nivel: Literal["baixo", "moderado", "alto"]
+
+
+class RespostaRota(RespostaAnalise):
+    origem: LocalRota
+    destino: LocalRota
+    profissao: str
+    transporte: str
+    data: date
+    inicio: str
+    fim: str
+    fuso: str
+    distancia_km: float
+    duracao_min: int
+    geometria: list[list[float]]
+    pontos: list[PontoRota]
+    previsao: list[PrevisaoHora]
+    nivel: Literal["baixo", "moderado", "alto"]
+    alertas: list[Alerta]
+    alertas_status: Literal["parcial", "consultados_nos_extremos"]
+    fontes: list[str]
+    consultado_em: str
+
+
 MENSAGENS = {
     "missing": "campo obrigatório",
     "json_invalid": "JSON inválido",
@@ -138,6 +205,23 @@ def erro_interno(_: Request, exc: Exception):
 @app.get("/health")
 def health():
     return {"status": "ok", "ia_configurada": bool(ia.API_KEY), "modelo": ia.MODELO}
+
+
+@app.get("/")
+def inicio():
+    return {"servico": "API Alerta Climático", "documentacao": "/docs", "status": "/health"}
+
+
+@app.get("/locais", response_model=list[LocalRota])
+def locais(q: str = Query(min_length=3, max_length=180)):
+    if len(q.strip()) < 3:
+        raise HTTPException(status_code=422, detail="Informe pelo menos 3 caracteres para buscar um local.")
+    return rotas.buscar_locais(q.strip())
+
+
+@app.post("/rotas/analise", response_model=RespostaRota)
+def analisar_rota(p: PedidoRota):
+    return rotas.planejar(p)
 
 
 @app.post("/previsao", response_model=RespostaPrevisao)

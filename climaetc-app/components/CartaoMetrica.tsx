@@ -1,5 +1,5 @@
+import { Icone } from './Icone'
 import type { Metrica } from '../types'
-import { Icone } from '../utils/constants.tsx'
 
 export default function CartaoMetrica({
   icone,

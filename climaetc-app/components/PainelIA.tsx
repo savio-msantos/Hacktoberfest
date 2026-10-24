@@ -1,5 +1,6 @@
+import { Icone } from './Icone'
 import React from 'react'
-import { Icone, COMPARATIVO } from '../utils/constants.tsx'
+import { COMPARATIVO } from '../utils/constants.tsx'
 
 import { Badge } from './Badge.tsx'
 
@@ -87,24 +88,24 @@ export function Comparativo() {
   )
 }
 
-export function GemmaExplica() {
-  const RotuloVantagem = ({
-    tipo,
-    children,
-  }: {
-    tipo: 'vantagem' | 'atencao'
-    children: React.ReactNode
-  }) => (
-    <>
-      <p
-        className={`mt-3 text-[10px] font-bold uppercase tracking-wide ${tipo === 'vantagem' ? 'text-[#0b5c52]' : 'text-[#a8530f]'}`}
-      >
-        {tipo === 'vantagem' ? 'Vantagem' : 'Atenção'}
-      </p>
-      <p className="mt-1 text-sm text-slate-700">{children}</p>
-    </>
-  )
+const RotuloVantagem = ({
+  tipo,
+  children,
+}: {
+  tipo: 'vantagem' | 'atencao'
+  children: React.ReactNode
+}) => (
+  <>
+    <p
+      className={`mt-3 text-[10px] font-bold uppercase tracking-wide ${tipo === 'vantagem' ? 'text-[#0b5c52]' : 'text-[#a8530f]'}`}
+    >
+      {tipo === 'vantagem' ? 'Vantagem' : 'Atenção'}
+    </p>
+    <p className="mt-1 text-sm text-slate-700">{children}</p>
+  </>
+)
 
+export function GemmaExplica() {
   return (
     <section className="rounded-2xl border border-[#0b5c52] bg-white p-6">
       <div className="flex items-center justify-between">

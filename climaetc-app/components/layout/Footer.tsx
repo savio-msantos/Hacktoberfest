@@ -1,4 +1,4 @@
-import { Icone } from '../../utils/constants'
+import { Icone } from '../Icone'
 
 export default function Footer() {
   return (
