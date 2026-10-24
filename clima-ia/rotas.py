@@ -169,12 +169,17 @@ def orientacoes(profissao, transporte, horas):
     rajada = max(h["rajada_kmh"] for h in horas)
     perfil = profissao.casefold()
     objeto = "carga e mochila térmica" if "entreg" in perfil else "equipamentos e materiais de trabalho"
+    if "feir" in perfil:
+        objeto = "mercadorias e embalagens durante o transporte e a carga e descarga"
     if "mototax" in perfil:
         objeto = "capacete extra e assento do passageiro"
     dicas = [{"dica": f"Proteja {objeto} antes de sair.",
               "motivo": f"A maior probabilidade horária de chuva nas amostras é {chuva:.0f}%."},
              {"dica": "Planeje pausas e leve água para o período de trabalho.",
               "motivo": f"Temperatura prevista de até {calor:.0f} °C nos pontos consultados."}]
+    if "feir" in perfil:
+        dicas[1] = {"dica": "Organize a carga e descarga para reduzir a exposição das mercadorias; se transportar perecíveis, preserve a conservação adequada.",
+                    "motivo": f"Há previsão de até {calor:.0f} °C no trajeto; produtos e embalagens ficam expostos ao tempo durante o manuseio."}
     if transporte == "moto":
         dicas.append({"dica": "Reduza a exposição na moto nos horários de atenção e procure abrigo adequado.",
                       "motivo": f"Rajadas previstas de até {rajada:.0f} km/h; chuva pode reduzir a aderência."})
@@ -218,6 +223,8 @@ def planejar(p):
         nivel = "alto"
     janelas = clima.janelas_de_risco(horas)
     contexto = (f"Trajeto de {p.origem.nome} até {p.destino.nome}, transporte {p.transporte}. "
+                f"Distância rodoviária estimada: {rota['distancia_km']} km; duração de referência sem trânsito e sem paradas: {rota['duracao_min']} minutos. "
+                f"Período de atividades informado: {int((final - comeco).total_seconds() / 3600)} horas. "
                 f"Horários no fuso {p.fuso}. São piores condições entre cinco amostras ao longo da via durante todo o período; "
                 "não há previsão de passagem por trecho. Não garanta segurança nem viabilidade. "
                 "Alertas consultados apenas nos municípios de origem e destino, não em toda a rota. "

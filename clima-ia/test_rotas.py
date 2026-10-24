@@ -34,6 +34,17 @@ def previsao_fake(coord, inicio, fim, fuso, indice):
 
 
 class RotasTest(unittest.TestCase):
+    def test_feirante_periodo_longo_e_contexto_da_viagem(self):
+        p = pedido(); p.update(profissao="Feirante de frutas", inicio="08:00", fim="18:00", transporte="carro")
+        resposta, chamada = self.consultar(payload=p)
+        self.assertEqual(resposta.status_code, 200)
+        prompt = chamada.call_args.args[0]
+        for trecho in ("carga e descarga", "10 horas", "20 minutos", "não a duração comprovada", "perecíveis"):
+            self.assertIn(trecho, prompt)
+        sugestoes = str(resposta.json()["sugestoes"])
+        self.assertIn("mercadorias", sugestoes)
+        self.assertNotIn("mochila térmica", sugestoes)
+
     def test_busca_reconhece_uf_e_estado_sem_acento(self):
         self.assertEqual(rotas.preparar_busca("Campinas/SP"), ("Campinas", "SP", "São Paulo"))
         self.assertEqual(rotas.preparar_busca("Rio Branco AC"), ("Rio Branco", "AC", "Acre"))
